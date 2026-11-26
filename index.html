@@ -5,25 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tên cho bé</title>
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: Arial, sans-serif;
-      max-width: 760px;
-      margin: 40px auto;
-      padding: 0 20px;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px 16px 48px;
       color: #333;
       line-height: 1.5;
     }
-    h1 { color: #d46b8a; margin-bottom: 16px; }
+    h1 { color: #d46b8a; font-size: 26px; margin: 12px 0 16px; }
 
+    /* Hộp kiểm tra kết nối CSV */
     .connection-box {
       padding: 10px 14px;
-      border-radius: 6px;
-      margin-bottom: 16px;
-      font-size: 14px;
+      border-radius: 8px;
+      margin-bottom: 14px;
+      font-size: 13px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
     .conn-checking { background: #f4f6f8; border: 1px solid #d0d7de; color: #57606a; }
     .conn-ok { background: #dafbe1; border: 1px solid #4ac26b; color: #1a7f37; }
@@ -34,68 +37,92 @@
       font-size: 13px;
       cursor: pointer;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 6px;
       background: #fff;
+      min-height: 34px;
       white-space: nowrap;
     }
     #btn-recheck:hover { background: #f0f0f0; }
 
-    /* Bộ lọc giới tính */
-    .filters {
+    /* Ô tìm kiếm */
+    #search {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+
+    /* Thanh công cụ lọc */
+    .toolbar {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       margin-bottom: 12px;
-      flex-wrap: wrap;
     }
-    .filters button {
-      padding: 8px 16px;
-      font-size: 14px;
+    .btn {
+      padding: 8px 15px;
       border: 1px solid #d46b8a;
       background: #fff;
       color: #d46b8a;
       border-radius: 20px;
       cursor: pointer;
-      transition: all 0.15s ease;
+      font-size: 15px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
     }
-    .filters button:hover {
-      background: #fdf2f5;
-    }
-    .filters button.active {
+    .btn:hover { background: #fdf2f5; }
+    .btn.active {
       background: #d46b8a;
       color: #fff;
       font-weight: bold;
     }
-
-    #search {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 16px;
-      box-sizing: border-box;
-      margin-bottom: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+    .btn.heart {
+      border: none;
+      background: none;
+      font-size: 26px;
+      padding: 4px 10px;
+      min-height: 40px;
+      min-width: 40px;
+      color: #d46b8a;
     }
-    #status { color: #777; font-style: italic; margin-bottom: 12px; }
 
+    #status { color: #777; font-style: italic; margin: 10px 0; font-size: 14px; }
+
+    /* Thẻ tên */
     .card {
       border: 1px solid #eee;
-      border-radius: 8px;
-      padding: 14px 18px;
+      border-radius: 12px;
+      padding: 14px 16px;
       margin: 12px 0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      background: #fff;
     }
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      border-bottom: 1px dashed #eee;
-      padding-bottom: 6px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 6px;
     }
     .card h2 { margin: 0; color: #d46b8a; font-size: 22px; }
-    .card-id { font-size: 13px; color: #999; }
+    .card-id { font-size: 12px; color: #999; white-space: nowrap; }
     .card p { margin: 4px 0; font-size: 15px; }
-    .label { color: #666; font-weight: bold; }
+    .card .actions {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .label { color: #777; font-weight: bold; }
     .badge {
       display: inline-block;
       padding: 2px 8px;
@@ -104,29 +131,74 @@
       background: #f3f4f6;
       color: #555;
       margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    a.link {
+      color: #d46b8a;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      font-size: 15px;
+    }
+    a.link:hover { text-decoration: underline; }
+
+    /* Trang chi tiết */
+    .big {
+      font-size: 36px !important;
+      color: #d46b8a;
+      margin: 0 0 10px !important;
+      font-weight: bold;
+    }
+    .note {
+      background: #fdf6f8;
+      border-left: 4px solid #d46b8a;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-top: 16px;
+      color: #555;
+    }
+    .hidden { display: none; }
+
+    @media (max-width: 480px) {
+      body { padding: 12px 12px 40px; }
+      h1 { font-size: 22px; }
+      .card h2 { font-size: 20px; }
+      .big { font-size: 30px !important; }
+      .btn { font-size: 14px; padding: 8px 12px; }
     }
   </style>
 </head>
 <body>
-  <h1>Tìm tên cho bé</h1>
+  <div id="home">
+    <h1>Tìm tên cho bé</h1>
 
-  <div id="conn-box" class="connection-box conn-checking">
-    <span id="conn-msg">Đang kiểm tra kết nối tới Google Sheets CSV...</span>
-    <button id="btn-recheck" type="button">Kiểm tra lại</button>
+    <div id="conn-box" class="connection-box conn-checking">
+      <span id="conn-msg">Đang kiểm tra kết nối tới Google Sheets CSV...</span>
+      <button id="btn-recheck" type="button">Kiểm tra lại</button>
+    </div>
+
+    <input id="search" type="text" placeholder="Tìm theo tên, chữ Hán, âm Hán-Việt, ý nghĩa, phong cách...">
+
+    <div class="toolbar" role="group" aria-label="Bộ lọc danh sách">
+      <button type="button" class="btn active" data-gender="all">Tất cả</button>
+      <button type="button" class="btn" data-gender="nam">Nam</button>
+      <button type="button" class="btn" data-gender="nu">Nữ</button>
+      <button type="button" class="btn" id="favOnly">★ Đã lưu (0)</button>
+    </div>
+
+    <p id="status">Đang tải dữ liệu...</p>
+    <div id="list"></div>
   </div>
 
-  <div class="filters" role="group" aria-label="Lọc theo giới tính">
-    <button type="button" class="active" data-gender="all">Tất cả</button>
-    <button type="button" data-gender="nam">Nam</button>
-    <button type="button" data-gender="nu">Nữ</button>
-  </div>
-
-  <input id="search" type="text" placeholder="Tìm theo tên, chữ Hán, âm Hán-Việt, ý nghĩa, phong cách...">
-  <p id="status">Đang tải dữ liệu...</p>
-  <div id="list"></div>
+  <div id="detail" class="hidden"></div>
 
   <script>
     const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-dLcAU664VckDZgR9ERcLItBxrQukXObUqdXJXywHmi1ZUDzCEJaCeMBlNMzmAbY4d66DroqnCpLv/pub?gid=0&single=true&output=csv";
+    const FAV_KEY = "ten-cho-be-yeu-thich";
 
     const EXPECTED_COLUMNS = [
       "id", "ten", "gioi tinh", "am han-viet", "chu han",
@@ -136,18 +208,67 @@
 
     let allNames = [];
     let currentGender = "all";
+    let favOnly = false;
 
-    // Chuẩn hóa chuỗi tiếng Việt: chữ thường, bỏ dấu, đổi đ/Đ thành d
-    function noAccent(str) {
-      return String(str || "")
-        .toLowerCase()
-        .replace(/đ/g, "d")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .trim();
+    // ---------- Yêu thích (lưu trên trình duyệt) ----------
+    function loadFavorites() {
+      try {
+        return JSON.parse(localStorage.getItem(FAV_KEY)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+    let favorites = loadFavorites();
+
+    function saveFavorites() {
+      try {
+        localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
+      } catch (e) { /* Bỏ qua nếu trình duyệt chặn lưu */ }
     }
 
+    function isFav(id) {
+      return favorites.includes(String(id));
+    }
+
+    function toggleFav(id) {
+      id = String(id);
+      favorites = isFav(id) ? favorites.filter(x => x !== id) : [...favorites, id];
+      saveFavorites();
+    }
+
+    // ---------- Xử lý văn bản ----------
+    function norm(s) {
+      return String(s || "").normalize("NFC").replace(/\s+/g, " ").trim().toLowerCase();
+    }
+
+    function noAccent(s) {
+      return norm(s)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d");
+    }
+
+    function escapeHTML(text) {
+      const amp = String.fromCharCode(38);
+      return String(text).replace(/[&<>"']/g, function (c) {
+        const code = c.charCodeAt(0);
+        if (code === 38) return amp + "amp;";
+        if (code === 60) return amp + "lt;";
+        if (code === 62) return amp + "gt;";
+        if (code === 34) return amp + "quot;";
+        if (code === 39) return amp + "#39;";
+        return c;
+      });
+    }
+
+    function line(label, value) {
+      if (!value) return "";
+      return `<p><span class="label">${label}:</span> ${escapeHTML(value)}</p>`;
+    }
+
+    // ---------- Đọc CSV ----------
     function parseCSV(text) {
+      text = text.replace(/^\uFEFF/, "");
       const rows = [];
       let row = [];
       let field = "";
@@ -178,64 +299,55 @@
       if (!rows || rows.length === 0) return [];
       const headers = rows[0].map(h => noAccent(h));
       return rows.slice(1)
-        .map(r => {
+        .map((r, idx) => {
           const obj = {};
           headers.forEach((h, i) => {
-            if (h) obj[h] = (r[i] || "").trim();
+            if (h) obj[h] = (r[i] || "").normalize("NFC").trim();
           });
+          // Đảm bảo mỗi bản ghi luôn có id duy nhất để mở chi tiết & lưu yêu thích
+          if (!obj["id"]) {
+            obj["id"] = "row-" + (idx + 1);
+          }
           return obj;
         })
         .filter(obj => obj["ten"] && obj["ten"] !== "");
     }
 
-    function escapeHTML(text) {
-      const amp = String.fromCharCode(38);
-      return String(text).replace(/[&<>"']/g, function (c) {
-        const code = c.charCodeAt(0);
-        if (code === 38) return amp + "amp;";
-        if (code === 60) return amp + "lt;";
-        if (code === 62) return amp + "gt;";
-        if (code === 34) return amp + "quot;";
-        if (code === 39) return amp + "#39;";
-        return c;
-      });
-    }
-
-    function line(label, value) {
-      if (!value) return "";
-      return `<p><span class="label">${label}:</span> ${escapeHTML(value)}</p>`;
-    }
-
-    function render(names) {
-      const list = document.getElementById("list");
-      list.innerHTML = names.map(n => `
+    // ---------- Giao diện danh sách ----------
+    function cardHTML(n) {
+      const id = escapeHTML(n["id"]);
+      return `
         <div class="card">
           <div class="card-header">
             <div>
               <h2 style="display:inline;">${escapeHTML(n["ten"])}</h2>
               ${n["chu han"] ? `<span class="badge">${escapeHTML(n["chu han"])}</span>` : ""}
-              ${n["gioi tinh"] ? `<span class="badge">${escapeHTML(n["gioi tinh"])}</span>` : ""}
             </div>
-            ${n["id"] ? `<span class="card-id">#${escapeHTML(n["id"])}</span>` : ""}
+            <span class="card-id">#${id}</span>
           </div>
           ${line("Giới tính", n["gioi tinh"])}
-          ${line("Âm Hán-Việt", n["am han-viet"])}
-          ${line("Thanh điệu", n["thanh dieu"])}
-          ${line("Ý nghĩa gốc", n["y nghia goc"])}
           ${line("Ý nghĩa trong tên", n["y nghia trong ten"])}
           ${line("Phong cách", n["phong cach"])}
-          ${line("Nguồn", n["nguon"])}
-          ${line("Mức độ tin cậy", n["muc do tin cay"])}
-        </div>
-      `).join("");
+          <div class="actions">
+            <a class="link" href="#${encodeURIComponent(n["id"])}">Xem chi tiết →</a>
+            <button type="button" class="btn heart" data-fav="${id}" aria-label="Lưu tên">${isFav(n["id"]) ? "♥" : "♡"}</button>
+          </div>
+        </div>`;
     }
 
-    // Lọc theo giới tính, sau đó lọc theo ô tìm kiếm
+    function updateFavButton() {
+      const btn = document.getElementById("favOnly");
+      btn.textContent = `★ Đã lưu (${favorites.length})`;
+      btn.classList.toggle("active", favOnly);
+    }
+
     function applyFilters() {
       const q = noAccent(document.getElementById("search").value);
-      const status = document.getElementById("status");
-
       let result = allNames;
+
+      if (favOnly) {
+        result = result.filter(n => isFav(n["id"]));
+      }
 
       if (currentGender !== "all") {
         result = result.filter(n => noAccent(n["gioi tinh"]) === currentGender);
@@ -248,22 +360,103 @@
         );
       }
 
-      render(result);
-      status.textContent = `Hiển thị ${result.length} / ${allNames.length} tên đã duyệt.`;
+      document.getElementById("list").innerHTML = result.map(cardHTML).join("");
+      document.getElementById("status").textContent =
+        favOnly && result.length === 0
+          ? "Bạn chưa lưu tên nào phù hợp. Nhấn ♡ ở một tên để lưu."
+          : `Hiển thị ${result.length} / ${allNames.length} tên đã duyệt.`;
     }
 
-    // Đổi trạng thái nút lọc khi bấm
-    document.querySelectorAll(".filters button").forEach(btn => {
+    // ---------- Trang chi tiết ----------
+    function showDetail(n) {
+      document.getElementById("home").classList.add("hidden");
+      const d = document.getElementById("detail");
+      d.classList.remove("hidden");
+      const id = escapeHTML(n["id"]);
+      d.innerHTML = `
+        <p><a class="link" href="#">← Quay lại danh sách</a></p>
+        <div class="card">
+          <div class="card-header">
+            <p class="big">${escapeHTML(n["ten"])}</p>
+            <span class="card-id">#${id}</span>
+          </div>
+          ${line("Giới tính", n["gioi tinh"])}
+          ${line("Âm Hán-Việt", n["am han-viet"])}
+          ${line("Chữ Hán", n["chu han"])}
+          ${line("Ý nghĩa gốc", n["y nghia goc"])}
+          ${line("Ý nghĩa trong tên", n["y nghia trong ten"])}
+          ${line("Thanh điệu", n["thanh dieu"])}
+          ${line("Phong cách", n["phong cach"])}
+          ${line("Nguồn", n["nguon"])}
+          ${line("Mức độ tin cậy", n["muc do tin cay"])}
+          <div class="actions">
+            <button type="button" class="btn ${isFav(n["id"]) ? "active" : ""}" data-detail-fav="${id}">
+              ${isFav(n["id"]) ? "♥ Đã lưu yêu thích" : "♡ Lưu tên yêu thích"}
+            </button>
+          </div>
+          <p class="note">Ý nghĩa trong tên chỉ mang tính tham khảo. Cha mẹ là người quyết định cuối cùng.</p>
+        </div>`;
+      window.scrollTo(0, 0);
+    }
+
+    function showHome() {
+      document.getElementById("detail").classList.add("hidden");
+      document.getElementById("home").classList.remove("hidden");
+      updateFavButton();
+      applyFilters();
+    }
+
+    // Đọc phần sau dấu # trên địa chỉ để quyết định hiện trang nào
+    function route() {
+      const id = decodeURIComponent(location.hash.slice(1));
+      if (id) {
+        const n = allNames.find(x => x["id"] === id);
+        if (n) {
+          showDetail(n);
+          return;
+        }
+      }
+      showHome();
+    }
+
+    // ---------- Sự kiện ----------
+    document.querySelectorAll("[data-gender]").forEach(btn => {
       btn.addEventListener("click", () => {
-        document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll("[data-gender]").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         currentGender = btn.dataset.gender;
         applyFilters();
       });
     });
 
+    document.getElementById("favOnly").addEventListener("click", () => {
+      favOnly = !favOnly;
+      updateFavButton();
+      applyFilters();
+    });
+
     document.getElementById("search").addEventListener("input", applyFilters);
 
+    document.getElementById("list").addEventListener("click", e => {
+      const btn = e.target.closest("[data-fav]");
+      if (!btn) return;
+      toggleFav(btn.dataset.fav);
+      updateFavButton();
+      applyFilters();
+    });
+
+    document.getElementById("detail").addEventListener("click", e => {
+      const btn = e.target.closest("[data-detail-fav]");
+      if (!btn) return;
+      const id = btn.dataset.detailFav;
+      toggleFav(id);
+      const item = allNames.find(x => x["id"] === id);
+      if (item) showDetail(item);
+    });
+
+    window.addEventListener("hashchange", route);
+
+    // ---------- Kiểm tra kết nối và tải dữ liệu ----------
     async function loadAndCheckCSV() {
       const connBox = document.getElementById("conn-box");
       const connMsg = document.getElementById("conn-msg");
@@ -282,7 +475,6 @@
           throw new Error(`May chu tra ve ma loi HTTP ${response.status}`);
         }
 
-        const contentType = response.headers.get("content-type") || "";
         const text = await response.text();
 
         if (text.trim().startsWith("<!DOCTYPE html") || text.trim().startsWith("<html")) {
@@ -307,15 +499,7 @@
         }
         connMsg.textContent = okText;
 
-        console.log("[CSV Check] Thành công:", {
-          status: response.status,
-          contentType,
-          headers: actualHeaders,
-          totalRows: parsedAll.length,
-          approvedCount: allNames.length
-        });
-
-        applyFilters();
+        route();
       } catch (err) {
         connBox.className = "connection-box conn-err";
         connMsg.textContent = `Truy cap CSV that bai: ${err.message}`;
@@ -325,6 +509,8 @@
     }
 
     document.getElementById("btn-recheck").addEventListener("click", loadAndCheckCSV);
+
+    updateFavButton();
     loadAndCheckCSV();
   </script>
 </body>
