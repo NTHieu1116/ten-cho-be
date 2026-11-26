@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tên cho bé</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #333;
+      line-height: 1.5;
+    }
+    h1 { color: #d46b8a; margin-bottom: 16px; }
+
+    .connection-box {
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .conn-checking { background: #f4f6f8; border: 1px solid #d0d7de; color: #57606a; }
+    .conn-ok { background: #dafbe1; border: 1px solid #4ac26b; color: #1a7f37; }
+    .conn-err { background: #ffebe9; border: 1px solid #ff8182; color: #cf222e; }
+
+    #btn-recheck {
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      white-space: nowrap;
+    }
+    #btn-recheck:hover { background: #f0f0f0; }
+
+    /* Bộ lọc giới tính */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .filters button {
+      padding: 8px 16px;
+      font-size: 14px;
+      border: 1px solid #d46b8a;
+      background: #fff;
+      color: #d46b8a;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .filters button:hover {
+      background: #fdf2f5;
+    }
+    .filters button.active {
+      background: #d46b8a;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    #search {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    #status { color: #777; font-style: italic; margin-bottom: 12px; }
+
+    .card {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 12px 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px dashed #eee;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .card h2 { margin: 0; color: #d46b8a; font-size: 22px; }
+    .card-id { font-size: 13px; color: #999; }
+    .card p { margin: 4px 0; font-size: 15px; }
+    .label { color: #666; font-weight: bold; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 12px;
+      border-radius: 12px;
+      background: #f3f4f6;
+      color: #555;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tìm tên cho bé</h1>
+
+  <div id="conn-box" class="connection-box conn-checking">
+    <span id="conn-msg">Đang kiểm tra kết nối tới Google Sheets CSV...</span>
+    <button id="btn-recheck" type="button">Kiểm tra lại</button>
+  </div>
+
+  <div class="filters" role="group" aria-label="Lọc theo giới tính">
+    <button type="button" class="active" data-gender="all">Tất cả</button>
+    <button type="button" data-gender="nam">Nam</button>
+    <button type="button" data-gender="nu">Nữ</button>
+  </div>
+
+  <input id="search" type="text" placeholder="Tìm theo tên, chữ Hán, âm Hán-Việt, ý nghĩa, phong cách...">
+  <p id="status">Đang tải dữ liệu...</p>
+  <div id="list"></div>
+
+  <script>
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-dLcAU664VckDZgR9ERcLItBxrQukXObUqdXJXywHmi1ZUDzCEJaCeMBlNMzmAbY4d66DroqnCpLv/pub?gid=0&single=true&output=csv";
+
+    const EXPECTED_COLUMNS = [
+      "id", "ten", "gioi tinh", "am han-viet", "chu han",
+      "y nghia goc", "y nghia trong ten", "thanh dieu",
+      "phong cach", "nguon", "muc do tin cay", "trang thai"
+    ];
+
+    let allNames = [];
+    let currentGender = "all";
+
+    // Chuẩn hóa chuỗi tiếng Việt: chữ thường, bỏ dấu, đổi đ/Đ thành d
+    function noAccent(str) {
+      return String(str || "")
+        .toLowerCase()
+        .replace(/đ/g, "d")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let field = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQuotes) {
+          if (c === '"') {
+            if (text[i + 1] === '"') { field += '"'; i++; }
+            else { inQuotes = false; }
+          } else {
+            field += c;
+          }
+        } else {
+          if (c === '"') { inQuotes = true; }
+          else if (c === ',') { row.push(field); field = ""; }
+          else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ""; }
+          else if (c === '\r') { /* bỏ qua */ }
+          else { field += c; }
+        }
+      }
+      if (field !== "" || row.length > 0) { row.push(field); rows.push(row); }
+      return rows;
+    }
+
+    function toObjects(rows) {
+      if (!rows || rows.length === 0) return [];
+      const headers = rows[0].map(h => noAccent(h));
+      return rows.slice(1)
+        .map(r => {
+          const obj = {};
+          headers.forEach((h, i) => {
+            if (h) obj[h] = (r[i] || "").trim();
+          });
+          return obj;
+        })
+        .filter(obj => obj["ten"] && obj["ten"] !== "");
+    }
+
+    function escapeHTML(text) {
+      const amp = String.fromCharCode(38);
+      return String(text).replace(/[&<>"']/g, function (c) {
+        const code = c.charCodeAt(0);
+        if (code === 38) return amp + "amp;";
+        if (code === 60) return amp + "lt;";
+        if (code === 62) return amp + "gt;";
+        if (code === 34) return amp + "quot;";
+        if (code === 39) return amp + "#39;";
+        return c;
+      });
+    }
+
+    function line(label, value) {
+      if (!value) return "";
+      return `<p><span class="label">${label}:</span> ${escapeHTML(value)}</p>`;
+    }
+
+    function render(names) {
+      const list = document.getElementById("list");
+      list.innerHTML = names.map(n => `
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 style="display:inline;">${escapeHTML(n["ten"])}</h2>
+              ${n["chu han"] ? `<span class="badge">${escapeHTML(n["chu han"])}</span>` : ""}
+              ${n["gioi tinh"] ? `<span class="badge">${escapeHTML(n["gioi tinh"])}</span>` : ""}
+            </div>
+            ${n["id"] ? `<span class="card-id">#${escapeHTML(n["id"])}</span>` : ""}
+          </div>
+          ${line("Giới tính", n["gioi tinh"])}
+          ${line("Âm Hán-Việt", n["am han-viet"])}
+          ${line("Thanh điệu", n["thanh dieu"])}
+          ${line("Ý nghĩa gốc", n["y nghia goc"])}
+          ${line("Ý nghĩa trong tên", n["y nghia trong ten"])}
+          ${line("Phong cách", n["phong cach"])}
+          ${line("Nguồn", n["nguon"])}
+          ${line("Mức độ tin cậy", n["muc do tin cay"])}
+        </div>
+      `).join("");
+    }
+
+    // Lọc theo giới tính, sau đó lọc theo ô tìm kiếm
+    function applyFilters() {
+      const q = noAccent(document.getElementById("search").value);
+      const status = document.getElementById("status");
+
+      let result = allNames;
+
+      if (currentGender !== "all") {
+        result = result.filter(n => noAccent(n["gioi tinh"]) === currentGender);
+      }
+
+      if (q) {
+        result = result.filter(n =>
+          ["ten", "chu han", "am han-viet", "y nghia trong ten", "y nghia goc", "phong cach"]
+            .some(key => noAccent(n[key]).includes(q))
+        );
+      }
+
+      render(result);
+      status.textContent = `Hiển thị ${result.length} / ${allNames.length} tên đã duyệt.`;
+    }
+
+    // Đổi trạng thái nút lọc khi bấm
+    document.querySelectorAll(".filters button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".filters button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentGender = btn.dataset.gender;
+        applyFilters();
+      });
+    });
+
+    document.getElementById("search").addEventListener("input", applyFilters);
+
+    async function loadAndCheckCSV() {
+      const connBox = document.getElementById("conn-box");
+      const connMsg = document.getElementById("conn-msg");
+      const status = document.getElementById("status");
+
+      connBox.className = "connection-box conn-checking";
+      connMsg.textContent = "Đang kiểm tra kết nối tới Google Sheets CSV...";
+      status.textContent = "Đang tải dữ liệu...";
+
+      try {
+        const startTime = performance.now();
+        const response = await fetch(CSV_URL);
+        const elapsed = Math.round(performance.now() - startTime);
+
+        if (!response.ok) {
+          throw new Error(`May chu tra ve ma loi HTTP ${response.status}`);
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+        const text = await response.text();
+
+        if (text.trim().startsWith("<!DOCTYPE html") || text.trim().startsWith("<html")) {
+          throw new Error("Link tra ve trang HTML thay vi CSV. Hay kiem tra lai quyen Xuat ban len web tren Google Sheets.");
+        }
+
+        const rows = parseCSV(text);
+        if (rows.length < 2) {
+          throw new Error("Truy cap duoc file CSV nhung chua co du lieu.");
+        }
+
+        const actualHeaders = rows[0].map(h => noAccent(h));
+        const missingCols = EXPECTED_COLUMNS.filter(col => !actualHeaders.includes(col));
+
+        const parsedAll = toObjects(rows);
+        allNames = parsedAll.filter(n => noAccent(n["trang thai"]) === "da duyet");
+
+        connBox.className = "connection-box conn-ok";
+        let okText = `Truy cap CSV thanh cong | HTTP ${response.status} | ${elapsed}ms | ${allNames.length}/${parsedAll.length} ten da duyet`;
+        if (missingCols.length > 0) {
+          okText += ` | Thieu cot: ${missingCols.join(", ")}`;
+        }
+        connMsg.textContent = okText;
+
+        console.log("[CSV Check] Thành công:", {
+          status: response.status,
+          contentType,
+          headers: actualHeaders,
+          totalRows: parsedAll.length,
+          approvedCount: allNames.length
+        });
+
+        applyFilters();
+      } catch (err) {
+        connBox.className = "connection-box conn-err";
+        connMsg.textContent = `Truy cap CSV that bai: ${err.message}`;
+        status.textContent = "Không có dữ liệu hiển thị do lỗi kết nối.";
+        console.error("[CSV Check] Lỗi:", err);
+      }
+    }
+
+    document.getElementById("btn-recheck").addEventListener("click", loadAndCheckCSV);
+    loadAndCheckCSV();
+  </script>
+</body>
+</html>
